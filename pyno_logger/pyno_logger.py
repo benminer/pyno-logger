@@ -27,14 +27,14 @@ class Pyno:
         "hostname": gethostname(),
         "pid": getpid(),
     }
-    log_level = getenv("LOG_LEVEL", "INFO")
+    log_level = getenv("LOG_LEVEL") or "INFO"
 
     omitted_keys = []
     newlines = False
 
     mixin = None
 
-    def __init__(self, config, mixin=None, name=None):
+    def __init__(self, config={}, mixin=None, name=None):
         if self.log_level not in LogLevel.keys():
             raise Exception(f"Invalid log level: {self.log_level}")
 
@@ -53,7 +53,7 @@ class Pyno:
         child_logger.log_level = self.log_level
         return child_logger
 
-    def set_config(self, config, mixin=None):
+    def set_config(self, config={}, mixin=None):
         if config.get("omitted_keys"):
             omitted_keys = config["omitted_keys"]
             if isinstance(omitted_keys, list):
@@ -74,11 +74,8 @@ class Pyno:
             and config["level"] in LogLevel.keys()
         ):
             self.log_level = config["level"]
-        else:
-            print(f"Warning: Invalid log level: {config['level']}")
-            print(f"Using default log level: {self.log_level}")
 
-        if mixin and isinstance(mixin, function):
+        if mixin and callable(mixin):
             self.mixin = mixin
 
     def log(self, level, data, message=None):
