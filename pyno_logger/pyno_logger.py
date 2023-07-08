@@ -5,6 +5,7 @@ from socket import gethostname
 from decimal import Decimal
 
 LogLevel = {
+    "FATAL": 60,
     "ERROR": 50,
     "WARNING": 40,
     "INFO": 30,
@@ -30,7 +31,11 @@ class Pyno:
     log_level = getenv("LOG_LEVEL") or "INFO"
 
     omitted_keys = []
+    redacted_keys = []
     newlines = False
+    msg_key = "msg"
+    error_key = "error"
+    enabled = True
 
     mixin = None
 
@@ -46,6 +51,9 @@ class Pyno:
 
         self.set_config(config, mixin)
 
+    def enabled(self, enabled):
+        self.enabled = enabled
+
     def child(self, name):
         child_logger = Pyno(mixin=self.mixin, name=name)
         child_logger.omitted_keys = self.omitted_keys
@@ -54,16 +62,23 @@ class Pyno:
         return child_logger
 
     def set_config(self, config={}, mixin=None):
-        if config.get("omitted_keys"):
-            omitted_keys = config["omitted_keys"]
+        if config.get("omit"):
+            omitted_keys = config["omit"]
             if isinstance(omitted_keys, list):
                 self.omitted_keys = omitted_keys
             elif isinstance(omitted_keys, tuple):
                 self.omitted_keys = list(omitted_keys)
             elif isinstance(omitted_keys, str):
                 self.omitted_keys = omitted_keys.split(",")
-            else:
-                raise Exception("Invalid omitted_keys config")
+
+        if config.get("redact"):
+            redacted_keys = config["redact"]
+            if isinstance(redacted_keys, list):
+                self.redacted_keys = redacted_keys
+            elif isinstance(redacted_keys, tuple):
+                self.redacted_keys = list(redacted_keys)
+            elif isinstance(redacted_keys, str):
+                self.redacted_keys = redacted_keys.split(",")
 
         if config.get("newlines") and isinstance(config["newlines"], bool):
             self.newlines = config["newlines"]
@@ -78,13 +93,23 @@ class Pyno:
         if mixin and callable(mixin):
             self.mixin = mixin
 
+        if config.get("base"):
+            if isinstance(config["base"], dict):
+                self.base_ctx = {**self.base_ctx, **config["base"]}
+
+        if config.get("msg_key") and isinstance(config["msg_key"], str):
+            self.msg_key = config["msg_key"]
+
+        if config.get("error_key") and isinstance(config["error_key"], str):
+            self.error_key = config["error_key"]
+
     def log(self, level, data, message=None):
         level_num = LogLevel.get(level)
 
         if not level_num or not isinstance(level_num, int):
             raise Exception(f"Invalid log level: {level}")
 
-        if self.log_level == "SILENT" or level_num == 0:
+        if self.log_level == "SILENT" or level_num == 0 or not self.enabled:
             return
 
         base_data = {"time": int(time.time())}
@@ -93,8 +118,7 @@ class Pyno:
             base_data["name"] = self.name
 
         if len(self.base_ctx.keys()):
-            for key, val in self.base_ctx.items():
-                base_data[key] = val
+            base_data = {**base_data, **self.base_ctx}
 
         if level_num >= LogLevel.get(self.log_level):
             ctx = {}
@@ -108,30 +132,33 @@ class Pyno:
             elif isinstance(data, str):
                 msg = data
             elif isinstance(data, Exception):
-                ctx = {"error": str(data)}
+                ctx = {self.error_key: str(data)}
 
             # TODO: Add support for custom log formats and serializers
 
             to_log = {
                 **base_data,
                 "level": level_num,
-                "msg": msg,
+                self.msg_key: msg,
             }
 
             if len(ctx.keys()):
-                for key, val in ctx.items():
-                    to_log[key] = val
+                to_log = {**to_log, **ctx}
 
             if self.mixin:
                 mixin_dict = self.mixin()
                 if isinstance(mixin_dict, dict):
-                    for key, val in mixin_dict.items():
-                        to_log[key] = val
+                    to_log = {**to_log, **mixin_dict}
 
             if len(self.omitted_keys):
                 for key in self.omitted_keys:
                     if key in to_log:
                         del to_log[key]
+
+            if len(self.redacted_keys):
+                for key in self.redacted_keys:
+                    if key in to_log:
+                        to_log[key] = "[REDACTED]"
 
             try:
                 json_to_log = json.dumps(to_log, cls=DecimalEncoder)
@@ -158,3 +185,6 @@ class Pyno:
 
     def error(self, data={}, message=None):
         self.log("ERROR", data, message)
+
+    def fatal(self, data={}, message=None):
+        self.log("FATAL", data, message)

@@ -20,11 +20,18 @@ from pyno_logger import Pyno
 logger = Pyno(config={"level": "INFO"}, mixin=SomeFunction)
 ```
 
-The `Pyno` class takes am optional configuration dictionary as an argument. The configuration options are as follows:
+The `Pyno` class takes an optional configuration dictionary as an argument. The configuration options are as follows:
 
-- `level` (optional): Specifies the log level. Valid log levels are "ERROR", "WARNING", "INFO", "DEBUG", "TRACE", and "SILENT". The default log level is "INFO". By default, Pyno uses the `LOG_LEVEL` environment variable if nothing is passed via the `config` dict.
+- `level` (optional): Specifies the log level. Valid log levels are "ERROR", "WARNING", "INFO", "DEBUG", "TRACE", "FATAL", and "SILENT". The default log level is "INFO". By default, Pyno uses the `LOG_LEVEL` environment variable if nothing is passed via the `config` dict.
 
-- `omitted_keys` (optional): Specifies a list of keys to omit from the logged data. It can be a list, tuple, or comma-separated string.
+- `base` (optional): Dictionary with any base configuration that is applied to all logs.
+
+- `msg_key` (optional): Custom key value for the message value. Defaults to `msg`.
+
+- `error_key` (optional): Custom key value for Exception values. Defaults to `error`.
+
+- `omit` (optional): Specifies a list of keys to omit from the logged data. It can be a list, tuple, or comma-separated string.
+- `redact` (optional): Specifies a list of keys to redact from the logged data. It can be a list, tuple, or comma-separated string. Output is printed as `[REDACTED]` for the matching keys.
 - `newlines` (optional): Specifies whether to append a newline character to the end of each log message. It should be a boolean value.
 
 The second param, `mixin`, allows for injecting a function that returns additional contextual data. Useful for any global state or dynamic data.
@@ -41,6 +48,7 @@ Pyno provides several logging methods that correspond to different log levels:
 - `debug(data={}, message=None)`: Logs a debug message with the provided data and an optional message.
 - `trace(data={}, message=None)`: Logs a trace message with the provided data and an optional message.
 - `error(data={}, message=None)`: Logs an error message with the provided data and an optional message.
+- `fatal(data={}, message=None)`: Logs a fatal error message with the provided data and an optional message.
 
 Each logging method takes two optional arguments: `data` and `message`. The `data` argument can be a dictionary, list, tuple, string, or Exception object containing additional contextual data. The `message` argument is a string that represents the log message. If not provided, the log message will be automatically generated based on the log level and data.
 
@@ -50,6 +58,7 @@ By default, Pyno includes the fields `time`, `pid`, `hostname` and `level`. Thes
 
 Pyno uses the following log levels:
 
+- `FATAL`: 60
 - `ERROR`: 50
 - `WARNING`: 40
 - `INFO`: 30
@@ -71,7 +80,7 @@ Here are some examples of how to use Pyno:
 
 ```python
 # Create a logger with default configuration
-logger = Pyno(config={"level": "INFO"})
+logger = Pyno()
 
 logger.info("This is an informational message.")
 logger.warning({"user_id": 123}, "This is a warning message.")
@@ -105,3 +114,5 @@ In the above example, the log messages will be printed to the console in JSON fo
 
 - Customizable Log Levels
 - Configurable Serializers for logging class instances
+- File destinations
+- Stack/Flush functionality
