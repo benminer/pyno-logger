@@ -7,7 +7,7 @@ Pyno is a Python logging package inspired by [Pino](https://www.npmjs.com/packag
 To install Pyno, use the following command:
 
 ```bash
-pip install pyno_logger
+pip install pyno-logger
 ```
 
 ## Usage
