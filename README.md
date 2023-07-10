@@ -22,17 +22,25 @@ logger = Pyno(config={"level": "INFO"}, mixin=SomeFunction)
 
 The `Pyno` class takes an optional configuration dictionary as an argument. The configuration options are as follows:
 
-- `level` (optional): Specifies the log level. Valid log levels are "ERROR", "WARNING", "INFO", "DEBUG", "TRACE", "FATAL", and "SILENT". The default log level is "INFO". By default, Pyno uses the `LOG_LEVEL` environment variable if nothing is passed via the `config` dict.
+- `level` (optional): Specifies the log level. Valid log levels are "ERROR", "WARNING", "INFO", "DEBUG", "TRACE", "FATAL", and "SILENT". The default log level is "INFO". If set, Pyno uses the `LOG_LEVEL` environment variable if nothing is passed via the `config` dict. Defaults to `INFO`.
 
-- `base` (optional): Dictionary with any base configuration that is applied to all logs.
+- `base` (optional): Dictionary with any base configuration that is applied to all logs. Defaults to `{}`.
+
+- `enabled` (optional): Boolean value that sets the enabled state of the logger. Defaults to `True`.
+
+- `log_none` (optional): Boolean value that determines if `None` values are logged in JSON output. Defaults to `False`.
 
 - `msg_key` (optional): Custom key value for the message value. Defaults to `msg`.
 
 - `error_key` (optional): Custom key value for Exception values. Defaults to `error`.
 
-- `omit` (optional): Specifies a list of keys to omit from the logged data. It can be a list, tuple, or comma-separated string.
-- `redact` (optional): Specifies a list of keys to redact from the logged data. It can be a list, tuple, or comma-separated string. Output is printed as `[REDACTED]` for the matching keys.
-- `newlines` (optional): Specifies whether to append a newline character to the end of each log message. It should be a boolean value.
+- `redact_value` (optional): Custom value for any keys that are redacted during a log. Defaults to `[REDACTED]`.
+
+- `omit` (optional): Specifies a list of keys to omit from the logged data. It can be a list, tuple, or comma-separated string. Defaults to `[]`.
+
+- `redact` (optional): Specifies a list of keys to redact from the logged data. It can be a list, tuple, or comma-separated string. Output is printed as `[REDACTED]` for the matching keys. Keys are redacted _after_ omission. Defaults to `[]`.
+
+- `newlines` (optional): Boolean value that specifies whether to append a newline character to the end of each log message. Defaults to `False`.
 
 The second param, `mixin`, allows for injecting a function that returns additional contextual data. Useful for any global state or dynamic data.
 
@@ -52,7 +60,7 @@ Pyno provides several logging methods that correspond to different log levels:
 
 Each logging method takes two optional arguments: `data` and `message`. The `data` argument can be a dictionary, list, tuple, string, or Exception object containing additional contextual data. The `message` argument is a string that represents the log message. If not provided, the log message will be automatically generated based on the log level and data.
 
-By default, Pyno includes the fields `time`, `pid`, `hostname` and `level`. These can be omitted via the `omitted_keys` config param, if desired.
+By default, Pyno includes the fields `time`, `pid`, `hostname` and `level`. These can be omitted via the `omit` config param, if desired.
 
 ### Log Levels
 

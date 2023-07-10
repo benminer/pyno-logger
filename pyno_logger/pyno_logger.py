@@ -30,11 +30,14 @@ class Pyno:
     }
     log_level = getenv("LOG_LEVEL") or "INFO"
 
+    config = {}
     omitted_keys = []
     redacted_keys = []
     newlines = False
+    log_none = False
     msg_key = "msg"
     error_key = "error"
+    redact_value = "[REDACTED]"
     enabled = True
 
     mixin = None
@@ -49,19 +52,20 @@ class Pyno:
         if isinstance(name, dict):
             self.base_ctx = {**self.base_ctx, **name}
 
-        self.set_config(config, mixin)
+        self.config = config
+        self.mixin = mixin
+        self.__set_config()
 
     def enabled(self, enabled):
         self.enabled = enabled
 
     def child(self, name):
-        child_logger = Pyno(mixin=self.mixin, name=name)
-        child_logger.omitted_keys = self.omitted_keys
-        child_logger.newlines = self.newlines
-        child_logger.log_level = self.log_level
+        child_logger = Pyno(config=self.config, mixin=self.mixin, name=name)
         return child_logger
 
-    def set_config(self, config={}, mixin=None):
+    def __set_config(self):
+        config = self.config
+        mixin = self.mixin
         if config.get("omit"):
             omitted_keys = config["omit"]
             if isinstance(omitted_keys, list):
@@ -90,8 +94,7 @@ class Pyno:
         ):
             self.log_level = config["level"]
 
-        if mixin and callable(mixin):
-            self.mixin = mixin
+        self.mixin = mixin if mixin and callable(mixin) else None
 
         if config.get("base"):
             if isinstance(config["base"], dict):
@@ -102,6 +105,15 @@ class Pyno:
 
         if config.get("error_key") and isinstance(config["error_key"], str):
             self.error_key = config["error_key"]
+
+        if config.get("enabled") and isinstance(config["enabled"], bool):
+            self.enabled = config["enabled"]
+
+        if config.get("redact_value") and isinstance(config["redact_value"], str):
+            self.redact_value = config["redact_value"]
+
+        if config.get("log_none") and isinstance(config["log_none"], bool):
+            self.log_none = config["log_none"]
 
     def log(self, level, data, message=None):
         level_num = LogLevel.get(level)
@@ -158,7 +170,12 @@ class Pyno:
             if len(self.redacted_keys):
                 for key in self.redacted_keys:
                     if key in to_log:
-                        to_log[key] = "[REDACTED]"
+                        to_log[key] = self.redact_value
+
+            if not self.log_none:
+                for key in list(to_log.keys()):
+                    if to_log[key] is None:
+                        del to_log[key]
 
             try:
                 json_to_log = json.dumps(to_log, cls=DecimalEncoder)
