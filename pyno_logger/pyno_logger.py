@@ -133,6 +133,10 @@ class Pyno:
             base_data = {**base_data, **self.base_ctx}
 
         if level_num >= LogLevel.get(self.log_level):
+
+            if isinstance(data, str) and not isinstance(message, str):
+                data, message = message, data
+
             ctx = {}
             msg = message
 

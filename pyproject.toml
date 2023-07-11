@@ -1,6 +1,6 @@
 [project]
 name = "pyno_logger"
-version = "0.0.9"
+version = "0.0.10"
 authors = [
   { name="Ben Miner", email="ben@getampt.com" },
 ]

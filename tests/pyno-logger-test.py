@@ -180,18 +180,30 @@ class PynoTests(TestCase):
 
     @patch("builtins.print")
     def test_log_none(self, mock_print):
-        logger = Pyno({
-            "log_none": True,
-        })
-        logger.info({ "foo": None }, "dict log")
+        logger = Pyno(
+            {
+                "log_none": True,
+            }
+        )
+        logger.info({"foo": None}, "dict log")
         assert mock_print.called
         assert "foo" in mock_print.call_args[0][0]
-        logger = Pyno({
-            "log_none": False,
-        })
-        logger.info({ "foo": None }, "dict log")
+        logger = Pyno(
+            {
+                "log_none": False,
+            }
+        )
+        logger.info({"foo": None}, "dict log")
         assert mock_print.called
         assert "foo" not in mock_print.call_args[0][0]
+
+    @patch("builtins.print")
+    def test_should_log_data_in_both_orders(self, mock_print):
+        logger = Pyno()
+        logger.info("info log", {"foo": "bar"})
+        assert mock_print.called
+        assert '"foo": "bar"' in mock_print.call_args[0][0]
+        assert '"msg": "info log"' in mock_print.call_args[0][0]
 
 
 if __name__ == "__main__":
